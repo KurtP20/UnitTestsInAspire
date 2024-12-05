@@ -7,6 +7,29 @@ using UnitTestsInAspire.Web;
 
 namespace UnitTestsInAspire.Tests;
 
+/*
+From a Discord discussion:
+Hi. I think I found a solution for unit testing a sub-project that relies on dependencies managed by Aspire, at least partly. I prepared 
+a minimum viable project [UnitTestsInAspire](https://github.com/KurtP20/UnitTestsInAspire) and with it, I hope I can convince you to 
+reconsider supporting this kind of unit testing in Aspire.
+
+In short: In the unit test, I spin up AppHost to prepare all dependencies, then I spin up an additional instance of the sub-project 
+`UnitTestsInAspire.Web` using `WebApplicationFactory`. From there I can access all services defined in UnitTestsInAspire.Web via
+```
+_scope = _factory.Services.CreateScope();
+var serviceProvider = _scope.ServiceProvider;
+var myService = serviceProvider.GetRequiredService<myService>();
+var randomNumber = myService.GetRandomNumber();
+```
+
+I only solved my problem partly, because `myService` does not rely on Aspire managed resources like Postgres or Qdrant, but for these 
+to work, I guess I just have to inject the environmental variables that are usually injected by Aspire into the WebApplicationFactory. 
+Not sure how I do that and it would be nice to get a list of environment variables that Aspire injects, but I think it is doable.
+
+I think what I have done is similar to what was suggested/wished for [here](https://github.com/dotnet/aspire/discussions/878). For me, testing in 
+this manner is a must, and I truly hope you are reconsidering implementing this functionality in Aspire! What do you think of my approach?
+ */
+
 // requires NuGet package Microsoft.AspNetCore.Mvc.Testing
 public class WebTests(WebApplicationFactory<Program> _factory,
                       ITestOutputHelper _output) : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
@@ -76,10 +99,10 @@ public class WebTests(WebApplicationFactory<Program> _factory,
 
         // get Services defined in UnitTestsInAspire.Web
         var serviceProvider = _scope.ServiceProvider;
-        var SKService = serviceProvider.GetRequiredService<myService>();
+        var myService = serviceProvider.GetRequiredService<myService>();
 
         // get random number
-        var randomNumber = SKService.GetRandomNumber();
+        var randomNumber = myService.GetRandomNumber();
 
         // show in test window
         _output.WriteLine($"The number is {randomNumber}");
