@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using UnitTestsInAspire.Web;
 using UnitTestsInAspire.Web.Components;
+using UnitTestsInAspire.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +21,19 @@ builder.Services.AddHttpClient<WeatherApiClient>(client =>
         client.BaseAddress = new("https+http://apiservice");
     });
 
-// add a dummy service for demonstartion purposes
-builder.Services.AddSingleton<myService>();
+
+// Add DB context to DI (requires Aspire.Npgsql.EntityFrameworkCore.PostgreSQL NuGet package)
+// the context is required by e.g. MS Identity
+builder.AddNpgsqlDbContext<ApplicationDbContext>("applicationDb");
+
+// Add DB context factory
+// required by e.g. HistoryService
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("applicationDb")));
+
+
+// add the historic temperature data service
+builder.Services.AddSingleton<HistoryService>();
 
 var app = builder.Build();
 
